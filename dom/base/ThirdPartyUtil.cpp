@@ -119,7 +119,7 @@ ThirdPartyUtil::IsThirdPartyWindow(nsIDOMWindow* aWindow,
   nsresult rv;
   nsCOMPtr<nsIURI> currentURI;
   rv = GetURIFromWindow(aWindow, getter_AddRefs(currentURI));
-  NS_ENSURE_SUCCESS(rv, rv);
+  // NS_ENSURE_SUCCESS(rv, rv);
 
   nsCString bottomDomain;
   rv = GetBaseDomain(currentURI, bottomDomain);
