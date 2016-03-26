@@ -64,7 +64,7 @@ nsWEBPDecoder::FinishInternal()
   WebPFreeDecBuffer(&mDecBuf);
 
   // We should never make multiple frames
-  NS_ABORT_IF_FALSE(GetFrameCount() <= 1, "Multiple WebP frames?");
+  MOZ_ASSERT(GetFrameCount() <= 1, "Multiple WebP frames?");
 
   // Send notifications if appropriate
   if (!IsSizeDecode() && (GetFrameCount() == 1)) {
@@ -74,9 +74,9 @@ nsWEBPDecoder::FinishInternal()
 }
 
 void
-nsWEBPDecoder::WriteInternal(const char *aBuffer, uint32_t aCount, DecodeStrategy)
+nsWEBPDecoder::WriteInternal(const char *aBuffer, uint32_t aCount)
 {
-  NS_ABORT_IF_FALSE(!HasError(), "Shouldn't call WriteInternal after error!");
+  MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
 
   const uint8_t* buf = (const uint8_t*)aBuffer;
   VP8StatusCode rv = WebPIAppend(mDecoder, buf, aCount);

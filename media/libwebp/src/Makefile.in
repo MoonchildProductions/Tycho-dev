@@ -10,8 +10,6 @@ VPATH = @srcdir@
 
 include $(DEPTH)/config/autoconf.mk
 
-LIBRARY_NAME = mozwebp
-FORCE_STATIC_LIB = 1
 ifeq (WINNT,$(OS_ARCH))
 VISIBILITY_FLAGS=
 endif
