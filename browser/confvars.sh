@@ -14,8 +14,10 @@ MOZ_SERVICES_CRYPTO=1
 MOZ_SERVICES_SYNC=1
 MOZ_APP_VERSION=$FIREFOX_VERSION
 MOZ_EXTENSIONS_DEFAULT=" gio"
-MOZ_DEVTOOLS=1
-MOZ_MULTI_GUID=1
+#Switched off because they will need to be upgraded
+#MOZ_DEVTOOLS=1
+#Switched off because it doesn't exist and may never will
+#MOZ_MULTI_GUID=1
 # MOZ_APP_DISPLAYNAME will be set by branding/configure.sh
 # Changing MOZ_*BRANDING_DIRECTORY requires a clobber to ensure correct results,
 # because branding dependencies are broken.
