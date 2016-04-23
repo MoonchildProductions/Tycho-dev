@@ -10,21 +10,19 @@ EXTRA_JS_MODULES += [
     'offlineAppCache.jsm',
     'openLocationLastURL.jsm',
     'SharedFrame.jsm',
-    'SignInToWebsite.jsm',
-    'Social.jsm',
     'webappsUI.jsm',
     'webrtcUI.jsm'
 ]
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
     EXTRA_JS_MODULES += [
-        WindowsJumpLists.jsm',
-        WindowsPreviewPerTab.jsm',
+        'WindowsJumpLists.jsm',
+        'WindowsPreviewPerTab.jsm',
     ]
 
 EXTRA_PP_JS_MODULES += [
-    AboutHomeUtils.jsm',
-    RecentWindow.jsm',
+    'AboutHomeUtils.jsm',
+    'RecentWindow.jsm',
 ]
 
 if CONFIG['MOZILLA_OFFICIAL']:
