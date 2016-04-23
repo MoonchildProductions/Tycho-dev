@@ -414,7 +414,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
   // otherwise.
   *aIsDefaultBrowser = true;
 
-  PRUnichar exePath[MAX_BUF];
+  wchar_t exePath[MAX_BUF];
   if (!::GetModuleFileNameW(0, exePath, MAX_BUF))
     return NS_ERROR_FAILURE;
 
@@ -428,7 +428,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
   HKEY theKey;
   DWORD res;
   nsresult rv;
-  PRUnichar currValue[MAX_BUF];
+  wchar_t currValue[MAX_BUF];
 
   SETTING* settings;
   SETTING* end = gSettings + sizeof(gSettings) / sizeof(SETTING);
@@ -451,13 +451,13 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
     // Close the key that was opened.
     ::RegCloseKey(theKey);
     if (REG_FAILED(res) ||
-        !valueData.Equals(currValue, CaseInsensitiveCompare)) {
+        _wcsicmp(valueData.get(), currValue)) {
       // Key wasn't set or was set to something other than our registry entry.
       NS_ConvertUTF8toUTF16 oldValueData(settings->oldValueData);
       offset = oldValueData.Find("%APPPATH%");
       oldValueData.Replace(offset, 9, appLongPath);
       // The current registry value doesn't match the current or the old format.
-      if (!oldValueData.Equals(currValue, CaseInsensitiveCompare)) {
+      if (_wcsicmp(oldValueData.get(), currValue)) {
         *aIsDefaultBrowser = false;
         return NS_OK;
       }
@@ -474,7 +474,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
       const nsString &flatValue = PromiseFlatString(valueData);
       res = ::RegSetValueExW(theKey, L"", 0, REG_SZ,
                              (const BYTE *) flatValue.get(),
-                             (flatValue.Length() + 1) * sizeof(PRUnichar));
+                             (flatValue.Length() + 1) * sizeof(wchar_t));
       // Close the key that was created.
       ::RegCloseKey(theKey);
       if (REG_FAILED(res)) {
@@ -520,7 +520,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
                                &len);
       // Close the key that was opened.
       ::RegCloseKey(theKey);
-      if (REG_FAILED(res) || PRUnichar('\0') != *currValue) {
+      if (REG_FAILED(res) || wchar_t('\0') != *currValue) {
         // Key wasn't set or was set to something other than our registry entry.
         // Delete the key along with all of its childrean and then recreate it.
         const nsString &flatName = PromiseFlatString(keyName);
@@ -536,7 +536,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
         }
 
         res = ::RegSetValueExW(theKey, L"", 0, REG_SZ, (const BYTE *) L"",
-                               sizeof(PRUnichar));
+                               sizeof(wchar_t));
         // Close the key that was created.
         ::RegCloseKey(theKey);
         if (REG_FAILED(res)) {
@@ -570,7 +570,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
     // Don't update the FTP protocol handler's shell open command when the
     // current registry value doesn't exist or matches the old format.
     if (REG_FAILED(res) ||
-        !oldValueOpen.Equals(currValue, CaseInsensitiveCompare)) {
+        _wcsicmp(oldValueOpen.get(), currValue)) {
       ::RegCloseKey(theKey);
       return NS_OK;
     }
@@ -580,7 +580,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
     const nsString &flatValue = PromiseFlatString(valueData);
     res = ::RegSetValueExW(theKey, L"", 0, REG_SZ,
                            (const BYTE *) flatValue.get(),
-                           (flatValue.Length() + 1) * sizeof(PRUnichar));
+                           (flatValue.Length() + 1) * sizeof(wchar_t));
     // Close the key that was created.
     ::RegCloseKey(theKey);
     // If updating the FTP protocol handlers shell open command fails try to
@@ -610,7 +610,7 @@ DynSHOpenWithDialog(HWND hwndParent, const OPENASINFO *poainfo)
   if (!SHOpenWithDialogFn) {
     // shell32.dll is in the knownDLLs list so will always be loaded from the
     // system32 directory.
-    static const PRUnichar kSehllLibraryName[] =  L"shell32.dll";
+    static const wchar_t kSehllLibraryName[] =  L"shell32.dll";
     HMODULE shellDLL = ::LoadLibraryW(kSehllLibraryName);
     if (!shellDLL) {
       return NS_ERROR_FAILURE;
@@ -965,7 +965,7 @@ nsWindowsShellService::OpenApplication(int32_t aApplication)
   if (NS_FAILED(rv))
     return rv;
 
-  PRUnichar buf[MAX_BUF];
+  wchar_t buf[MAX_BUF];
   DWORD type, len = sizeof buf;
   DWORD res = ::RegQueryValueExW(theKey, EmptyString().get(), 0,
                                  &type, (LPBYTE)&buf, &len);
@@ -1066,7 +1066,7 @@ nsWindowsShellService::SetDesktopBackgroundColor(uint32_t aColor)
                       nsIWindowsRegKey::ACCESS_SET_VALUE);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  PRUnichar rgb[12];
+  wchar_t rgb[12];
   _snwprintf(rgb, 12, L"%u %u %u", r, g, b);
 
   rv = regKey->WriteStringValue(NS_LITERAL_STRING("Background"),
