@@ -5,7 +5,7 @@
 dist_dest   = $(DIST)/$(MOZ_MACBUNDLE_NAME)
 
 PREF_JS_EXPORTS = $(srcdir)/profile/firefox.js \
-		  $(nullptr)
+		  $(NULL)
 
 
 # hardcode en-US for the moment
@@ -19,7 +19,7 @@ DEFINES += \
   -DNEWWINDOW_ICO=\"$(DIST)/branding/newwindow.ico\" \
   -DNEWTAB_ICO=\"$(DIST)/branding/newtab.ico\" \
   -DPBMODE_ICO=\"$(DIST)/branding/pbmode.ico\" \
-  $(nullptr)
+  $(NULL)
 
 ifdef LIBXUL_SDK #{
 PREF_JS_EXPORTS += $(srcdir)/profile/channel-prefs.js
@@ -29,7 +29,7 @@ endif #} LIBXUL_SDK
 
 LIBS += \
 	$(XPCOM_STANDALONE_GLUE_LDOPTS) \
-	$(nullptr)
+	$(NULL)
 
 ifdef MOZ_LINKER
 LIBS += $(MOZ_ZLIB_LIBS)
