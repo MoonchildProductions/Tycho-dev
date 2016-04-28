@@ -39,7 +39,7 @@
 
 #define MAX_BYTES 512u
 
-NS_IMPL_ISUPPORTS3(nsFeedSniffer,
+NS_IMPL_ISUPPORTS(nsFeedSniffer,
                    nsIContentSniffer,
                    nsIStreamListener,
                    nsIRequestObserver)
