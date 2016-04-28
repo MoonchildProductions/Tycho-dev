@@ -583,9 +583,10 @@ pref("browser.gesture.tap", "cmd_fullZoomReset");
 pref("browser.snapshots.limit", 0);
 
 // 0: Nothing happens
-// 1: Scrolling contents
-// 2: Go back or go forward, in your history
-// 3: Zoom in or out.
+// 1: Scroll contents
+// 2: Go back or go forward in browsing history
+// 3: Zoom in or out
+// 4: Scroll contents with X and Y swapped
 #ifdef XP_MACOSX
 // On OS X, if the wheel has one axis only, shift+wheel comes through as a
 // horizontal scroll event. Thus, we can't assign anything other than normal
@@ -1816,12 +1817,12 @@ pref("ui.key.menuAccessKeyFocuses", true);
 pref("browser.eme.ui.enabled", false);
 
 #if !defined(MOZ_UPDATE_CHANNEL) || MOZ_UPDATE_CHANNEL != esr
-pref("media.eme.enabled", true);
-pref("media.eme.apiVisible", true);
+pref("media.eme.enabled", false);
+pref("media.eme.apiVisible", false);
 
 #ifdef XP_WIN
-pref("media.gmp-eme-adobe.enabled", true);
-pref("browser.eme.ui.enabled", true);
+pref("media.gmp-eme-adobe.enabled", false);
+pref("browser.eme.ui.enabled", false);
 #endif
 
 #else // MOZ_UPDATE_CHANNEL == esr

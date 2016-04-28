@@ -2225,12 +2225,8 @@ ia64*-hpux*)
         MKCSHLIB='$(LD) -NOLOGO -DLL -OUT:$@ -PDB:$(LINK_PDBFILE) $(DSO_LDOPTS)'
         MKSHLIB_FORCE_ALL=
         MKSHLIB_UNFORCE_ALL=
-        dnl Set subsystem version 5 for Windows XP.
-        if test "$CPU_ARCH" = "x86"; then
-            WIN32_SUBSYSTEM_VERSION=5.01
-        else
-            WIN32_SUBSYSTEM_VERSION=6.01
-        fi
+        dnl Set subsystem version 6.
+        WIN32_SUBSYSTEM_VERSION=6.01
         WIN32_CONSOLE_EXE_LDFLAGS=-SUBSYSTEM:CONSOLE,$WIN32_SUBSYSTEM_VERSION
         WIN32_GUI_EXE_LDFLAGS=-SUBSYSTEM:WINDOWS,$WIN32_SUBSYSTEM_VERSION
         DSO_LDOPTS=-SUBSYSTEM:WINDOWS,$WIN32_SUBSYSTEM_VERSION
@@ -2239,11 +2235,6 @@ ia64*-hpux*)
         _DEFINES_CXXFLAGS='-FI $(DEPTH)/dist/include/mozilla-config.h -DMOZILLA_CLIENT'
         CFLAGS="$CFLAGS -W3 -Gy"
         CXXFLAGS="$CXXFLAGS -W3 -Gy"
-        if test "$CPU_ARCH" = "x86"; then
-            dnl VS2012+ defaults to -arch:SSE2.
-            CFLAGS="$CFLAGS -arch:IA32"
-            CXXFLAGS="$CXXFLAGS -arch:IA32"
-        fi
         dnl VS2013+ requires -FS when parallel building by make -jN.
         dnl If nothing, compiler sometimes causes C1041 error.
         CFLAGS="$CFLAGS -FS"
@@ -2282,10 +2273,10 @@ ia64*-hpux*)
         MOZ_OPTIMIZE_FLAGS='-O1 -Oi'
         MOZ_FIX_LINK_PATHS=
         MOZ_COMPONENT_NSPR_LIBS='$(NSPR_LIBS)'
-        # Disable these flags on clang-cl since it doesn't ignore unknown arguments by default, and
+        # Don't enable these flags on clang-cl since it doesn't ignore unknown arguments by default, and
         # autoconf insists on passing $LDFLAGS to the compiler.
         if test -z "$CLANG_CL"; then
-            LDFLAGS="$LDFLAGS -LARGEADDRESSAWARE -NXCOMPAT"
+            LDFLAGS="$LDFLAGS -LARGEADDRESSAWARE -NXCOMPAT -OPT:REF -OPT:ICF=15"
             if test -z "$DEVELOPER_OPTIONS"; then
                 LDFLAGS="$LDFLAGS -RELEASE"
             fi
@@ -2653,14 +2644,7 @@ if test "$GNU_CC" -a "$OS_TARGET" != WINNT; then
     VISIBILITY_FLAGS='-fvisibility=hidden'
     ;;
   *)
-    case $GCC_VERSION in
-    4.6*)
-      VISIBILITY_FLAGS='-I$(DIST)/system_wrappers -include $(MOZILLA_DIR)/config/gcc_hidden_dso_handle.h'
-      ;;
-    *)
-      VISIBILITY_FLAGS='-I$(DIST)/system_wrappers -include $(MOZILLA_DIR)/config/gcc_hidden.h'
-      ;;
-    esac
+    VISIBILITY_FLAGS='-I$(DIST)/system_wrappers -include $(MOZILLA_DIR)/config/gcc_hidden.h'
     WRAP_SYSTEM_INCLUDES=1
     ;;
   esac
@@ -2683,28 +2667,7 @@ esac
 AC_SUBST(WRAP_SYSTEM_INCLUDES)
 AC_SUBST(VISIBILITY_FLAGS)
 
-MOZ_GCC_PR49911
 MOZ_LLVM_PR8927
-
-dnl Check for __force_align_arg_pointer__ for SSE2 on gcc
-dnl ========================================================
-if test "$GNU_CC"; then
-  CFLAGS_save="${CFLAGS}"
-  CFLAGS="${CFLAGS} -Werror"
-  AC_CACHE_CHECK(for __force_align_arg_pointer__ attribute,
-                 ac_cv_force_align_arg_pointer,
-                 [AC_TRY_COMPILE([__attribute__ ((__force_align_arg_pointer__)) void test() {}],
-                                 [],
-                                 ac_cv_force_align_arg_pointer="yes",
-                                 ac_cv_force_align_arg_pointer="no")])
-  CFLAGS="${CFLAGS_save}"
-  if test "$ac_cv_force_align_arg_pointer" = "yes"; then
-    HAVE_GCC_ALIGN_ARG_POINTER=1
-  else
-    HAVE_GCC_ALIGN_ARG_POINTER=
-  fi
-fi
-AC_SUBST(HAVE_GCC_ALIGN_ARG_POINTER)
 
 dnl Checks for header files.
 dnl ========================================================
@@ -3628,7 +3591,9 @@ MOZ_ARG_WITH_BOOL(system-nss,
     _USE_SYSTEM_NSS=1 )
 
 if test -n "$_USE_SYSTEM_NSS"; then
-    AM_PATH_NSS(3.19.2.4, [MOZ_NATIVE_NSS=1], [AC_MSG_ERROR([you don't have NSS installed or your version is too old])])
+    dnl NSS capabilities are out of sync with upstream (Camellia-GCM). Don't allow.
+    AC_MSG_ERROR([Using a system-provided NSS library is currently not supported.])
+    AM_PATH_NSS(3.19.4.2, [MOZ_NATIVE_NSS=1], [AC_MSG_ERROR([you don't have NSS installed or your version is too old])])
 fi
 
 if test -n "$MOZ_NATIVE_NSS"; then
@@ -3900,6 +3865,7 @@ ENABLE_TESTS=1
 ENABLE_SYSTEM_EXTENSION_DIRS=1
 MOZ_BRANDING_DIRECTORY=
 MOZ_OFFICIAL_BRANDING=
+MC_OFFICIAL=1
 MOZ_FEEDS=1
 MOZ_WEBAPP_RUNTIME=
 MOZ_AUTH_EXTENSION=1
@@ -4723,23 +4689,37 @@ MOZ_ARG_ENABLE_STRING(ui-locale,
 AC_SUBST(MOZ_UI_LOCALE)
 
 dnl ========================================================
+dnl = Vendor override
+dnl ========================================================
+MOZ_ARG_DISABLE_BOOL(official-vendor,
+[  --disable-official-vendor   Disable the use of official vendor.],
+    MC_OFFICIAL=,
+    MC_OFFICIAL=1)
+
+dnl ========================================================
 dnl = Trademarked Branding
 dnl ========================================================
 MOZ_ARG_ENABLE_BOOL(official-branding,
 [  --enable-official-branding
-                          Enable Official mozilla.org Branding
+                          Enable official branding
                           Do not distribute builds with
                           --enable-official-branding unless you have
-                          permission to use trademarks per
-                          http://www.mozilla.org/foundation/trademarks/ .],
+                          permission to use the name/logo per
+                          http://www.palemoon.org/redist.shtml .],
 [
   if test -z "$MOZ_OFFICIAL_BRANDING_DIRECTORY"; then
     AC_MSG_ERROR([You must specify MOZ_OFFICIAL_BRANDING_DIRECTORY to use --enable-official-branding.])
   else
     MOZ_BRANDING_DIRECTORY=${MOZ_OFFICIAL_BRANDING_DIRECTORY}
     MOZ_OFFICIAL_BRANDING=1
+    MC_OFFICIAL=1
   fi
 ], MOZ_OFFICIAL_BRANDING=)
+
+AC_SUBST(MC_OFFICIAL)
+if test -n "$MC_OFFICIAL"; then
+  AC_DEFINE(MC_OFFICIAL)
+fi
 
 AC_SUBST(MOZ_OFFICIAL_BRANDING)
 if test -n "$MOZ_OFFICIAL_BRANDING"; then
@@ -7032,12 +7012,15 @@ elif test "$GNU_CC"; then
     # -Wmaybe-uninitialized - too many false positives
     # -Wdeprecated-declarations - we don't want our builds held hostage when a
     #   platform-specific API becomes deprecated.
+    # -Warray-bounds - false positives depending on optimization
     MOZ_C_SUPPORTS_WARNING(-W, no-error=uninitialized, ac_c_has_noerror_uninitialized)
     MOZ_CXX_SUPPORTS_WARNING(-W, no-error=uninitialized, ac_cxx_has_noerror_uninitialized)
     MOZ_C_SUPPORTS_WARNING(-W, no-error=maybe-uninitialized, ac_c_has_noerror_maybe_uninitialized)
     MOZ_CXX_SUPPORTS_WARNING(-W, no-error=maybe-uninitialized, ac_cxx_has_noerror_maybe_uninitialized)
     MOZ_C_SUPPORTS_WARNING(-W, no-error=deprecated-declarations, ac_c_has_noerror_deprecated_declarations)
     MOZ_CXX_SUPPORTS_WARNING(-W, no-error=deprecated-declarations, ac_cxx_has_noerror_deprecated_declarations)
+    MOZ_C_SUPPORTS_WARNING(-W, no-error=array-bounds, ac_c_has_noerror_array_bounds)
+    MOZ_CXX_SUPPORTS_WARNING(-W, no-error=array-bounds, ac_cxx_has_noerror_array_bounds)
 
     if test -n "$MOZ_PGO"; then
         MOZ_C_SUPPORTS_WARNING(-W, no-error=coverage-mismatch, ac_c_has_noerror_coverage_mismatch)
@@ -7152,6 +7135,19 @@ Android|WINNT|Darwin)
   MOZ_GLUE_IN_PROGRAM=1
   ;;
 esac
+
+dnl ========================================================
+dnl = Enable full jemalloc lib
+dnl ========================================================
+MOZ_ARG_ENABLE_BOOL(jemalloc-lib,
+[  --enable-jemalloc-lib       Use the full jemalloc lib],
+    MOZ_JEMALLOC3=1,
+    MOZ_JEMALLOC3= )
+
+if test -n "$MOZ_JEMALLOC3" -a -z "$MOZ_MEMORY"; then
+    dnl We need jemalloc enabled to use jemalloc3
+    AC_MSG_ERROR([--enable-jemalloc-lib requires --enable-jemalloc])
+fi
 
 dnl ========================================================
 dnl = Enable dynamic replacement of malloc implementation
@@ -7467,6 +7463,8 @@ if test -n "$STDCXX_COMPAT"; then
    eval $(CXX="$CXX" HOST_CXX="$HOST_CXX" $PYTHON -m mozbuild.configure.libstdcxx)
    AC_SUBST(MOZ_LIBSTDCXX_TARGET_VERSION)
    AC_SUBST(MOZ_LIBSTDCXX_HOST_VERSION)
+   CXXFLAGS="$CXXFLAGS -D_GLIBCXX_USE_CXX11_ABI=0"
+   HOST_CXXFLAGS="$HOST_CXXFLAGS -D_GLIBCXX_USE_CXX11_ABI=0"
 fi
 
 dnl ========================================================
@@ -7527,6 +7525,22 @@ if test -n "$MOZ_DISABLE_STARTUPCACHE"; then
   AC_DEFINE(MOZ_DISABLE_STARTUPCACHE)
 fi
 AC_SUBST(MOZ_DISABLE_STARTUPCACHE)
+
+dnl ========================================================
+dnl = Don't precompile the startup cache
+dnl ========================================================
+MOZ_DISABLE_PRECOMPILED_STARTUPCACHE=
+
+MOZ_ARG_DISABLE_BOOL(precompiled-startupcache,
+[  --disable-precompiled-startupcache      Don't precompile the startup cache ],
+    MOZ_DISABLE_PRECOMPILED_STARTUPCACHE=1,
+	MOZ_DISABLE_PRECOMPILED_STARTUPCACHE= )
+
+if test -n "$MOZ_DISABLE_PRECOMPILED_STARTUPCACHE"; then
+  AC_DEFINE(MOZ_DISABLE_PRECOMPILED_STARTUPCACHE)
+fi
+
+AC_SUBST(MOZ_DISABLE_PRECOMPILED_STARTUPCACHE)
 
 dnl ========================================================
 dnl = Enable Radio Interface for B2G (Gonk usually)
@@ -8723,6 +8737,9 @@ AC_SUBST(MOZ_UA_OS_AGNOSTIC)
 if test -n "$MOZ_UA_OS_AGNOSTIC"; then
   AC_DEFINE(MOZ_UA_OS_AGNOSTIC)
 fi
+
+AC_DEFINE_UNQUOTED(MOZ_UA_BUILDID, "$MOZ_UA_BUILDID")
+AC_SUBST(MOZ_UA_BUILDID)
 
 AC_SUBST(MOZ_APP_STATIC_INI)
 
