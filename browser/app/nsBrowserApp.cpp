@@ -77,7 +77,7 @@ static void Output(const char *fmt, ... )
 #if MOZ_WINCONSOLE
   fwprintf_s(stderr, wide_msg);
 #else
-  MessageBoxW(NULL, 
+  MessageBoxW(nullptr, 
               wide_msg,
               L"Pale Moon",
               MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
@@ -375,13 +375,13 @@ InitXPCOMGlue(const char *argv0, nsIFile **xreDirectory)
     }
     if (absfwurl) {
       CFURLRef xulurl =
-        CFURLCreateCopyAppendingPathComponent(NULL, absfwurl,
+        CFURLCreateCopyAppendingPathComponent(nullptr, absfwurl,
                                               CFSTR("XUL.framework"),
                                               true);
 
       if (xulurl) {
         CFURLRef xpcomurl =
-          CFURLCreateCopyAppendingPathComponent(NULL, xulurl,
+          CFURLCreateCopyAppendingPathComponent(nullptr, xulurl,
                                                 CFSTR("libxpcom.dylib"),
                                                 false);
 
