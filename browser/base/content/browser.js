@@ -1152,12 +1152,7 @@ var gBrowserInit = {
 
     // initialize the session-restore service (in case it's not already running)
     let ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
-    ss.init(window);
-
-    // Enable the Restore Last Session command if needed
-    if (ss.canRestoreLastSession &&
-        !PrivateBrowsingUtils.isWindowPrivate(window))
-      goSetCommandEnabled("Browser:RestoreLastSession", true);
+    let ssPromise = ss.init(window);
 
     PlacesToolbarHelper.init();
 
@@ -1327,8 +1322,19 @@ var gBrowserInit = {
       Cu.reportError("Could not end startup crash tracking: " + ex);
     }
 
+    ssPromise.then(() =>{
+      // Enable the Restore Last Session command if needed
+      if (ss.canRestoreLastSession &&
+          !PrivateBrowsingUtils.isWindowPrivate(window))
+        goSetCommandEnabled("Browser:RestoreLastSession", true);
+
+      //TabView.init(); // tab groups?
+      //SocialUI.init(); // social removed?
+
+      setTimeout(function () { BrowserChromeTest.markAsReady(); }, 0);
+    });
+
     Services.obs.notifyObservers(window, "browser-delayed-startup-finished", "");
-    setTimeout(function () { BrowserChromeTest.markAsReady(); }, 0);
   },
 
   // Returns the URI(s) to load at startup.
