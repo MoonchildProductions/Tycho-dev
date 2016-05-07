@@ -16,9 +16,11 @@ DIRS += [
     'search',
     'sessionstore',
     'shell',
-    'sidebar',
     'migration',
 ]
+
+if CONFIG['MOZ_BROWSER_SIDEBAR']:
+    DIRS += ['sidebar']
 
 if CONFIG['MOZ_SAFE_BROWSING']:
     DIRS += ['safebrowsing']
