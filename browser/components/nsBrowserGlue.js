@@ -55,6 +55,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "webrtcUI",
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerParent",
+                                  "resource://gre/modules/LoginManagerParent.jsm");
+
 XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
                                   "resource:///modules/RecentWindow.jsm");
 
@@ -428,6 +431,7 @@ BrowserGlue.prototype = {
     BrowserNewTabPreloader.init();
     PdfJs.init();
     webrtcUI.init();
+    LoginManagerParent.init();
 
     Services.obs.notifyObservers(null, "browser-ui-startup-complete", "");
   },

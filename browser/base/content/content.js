@@ -34,8 +34,8 @@ addMessageListener("Browser:HideSessionRestoreButton", function (message) {
   }
 });
 
-addEventListener("DOMContentLoaded", function(event) {
-  LoginManagerContent.onContentLoaded(event);
+addEventListener("DOMFormHasPassword", function(event) {
+  LoginManagerContent.onFormPassword(event);
 });
 addEventListener("DOMAutoComplete", function(event) {
   LoginManagerContent.onUsernameInput(event);
