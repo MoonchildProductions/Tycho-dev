@@ -1,0 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# browser.jar:
+# overlay chrome://browser/content/browser.xul   chrome://status4evar/content/legacy.xul      appversion<=28.*
+# overlay chrome://status4evar/content/prefs.xul chrome://status4evar/content/prefsLegacy.xul appversion<=28.*
