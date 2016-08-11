@@ -155,7 +155,7 @@ treechildren.autocomplete-treebody::-moz-tree-cell-text(selected) {
 .autocomplete-richlistitem[type~="autofill"] .ac-title-box {
   /* Center the title by moving it down by half of .ac-url-box's height,
      including vertical margins (if any). */
-  transform: translateY(calc(.5em  2px));
+  transform: translateY(calc(.5em + 2px));
 }
 
 .ac-site-icon {
