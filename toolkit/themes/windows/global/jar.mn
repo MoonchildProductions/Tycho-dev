@@ -210,5 +210,10 @@ toolkit.jar:
         skin/classic/global/tree/twisty-open-hover.png           (tree/twisty-open-hover.png)
         skin/classic/global/tree/twisty-open-hover-rtl.png       (tree/twisty-open-hover-rtl.png)
 
+#if MOZ_BUILD_APP == browser
+../browser/extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}/chrome.jar:
+#elif MOZ_SEPARATE_MANIFEST_FOR_THEME_OVERRIDES
+../extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}/chrome.jar:
+#endif
 % override chrome://global/skin/arrow/arrow-lft-hov.gif           chrome://global/skin/arrow/arrow-lft.gif
 % override chrome://global/skin/arrow/arrow-rit-hov.gif           chrome://global/skin/arrow/arrow-rit.gif
