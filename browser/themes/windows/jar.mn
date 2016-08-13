@@ -19,7 +19,6 @@ browser.jar:
         skin/classic/browser/appmenu-icons.png
         skin/classic/browser/appmenu-dropmarker.png
 *       skin/classic/browser/browser.css
-*       skin/classic/browser/browser-aero.css
         skin/classic/browser/caption-buttons.svg
         skin/classic/browser/click-to-play-warning-stripes.png
 *       skin/classic/browser/engineManager.css
@@ -93,9 +92,7 @@ browser.jar:
         skin/classic/browser/downloads/download-notification-start.png (downloads/download-notification-start.png)
         skin/classic/browser/downloads/download-summary.png          (downloads/download-summary.png)
 *       skin/classic/browser/downloads/downloads.css                 (downloads/downloads.css)
-*       skin/classic/browser/downloads/downloads-aero.css            (downloads/downloads-aero.css)
 *       skin/classic/browser/downloads/allDownloadsViewOverlay.css   (downloads/allDownloadsViewOverlay.css)
-*       skin/classic/browser/downloads/allDownloadsViewOverlay-aero.css (downloads/allDownloadsViewOverlay-aero.css)
         skin/classic/browser/downloads/contentAreaDownloadsView.css  (downloads/contentAreaDownloadsView.css)
         skin/classic/browser/feeds/feedIcon.png                      (feeds/feedIcon.png)
         skin/classic/browser/feeds/feedIcon16.png                    (feeds/feedIcon16.png)
@@ -108,9 +105,7 @@ browser.jar:
         skin/classic/browser/newtab/controls.png                     (newtab/controls.png)
         skin/classic/browser/newtab/noise.png                        (newtab/noise.png)
         skin/classic/browser/places/places.css                       (places/places.css)
-*       skin/classic/browser/places/places-aero.css                  (places/places-aero.css)
 *       skin/classic/browser/places/organizer.css                    (places/organizer.css)
-*       skin/classic/browser/places/organizer-aero.css               (places/organizer-aero.css)
         skin/classic/browser/places/editBookmark.png                 (places/editBookmark.png)
         skin/classic/browser/places/bookmark.png                     (places/bookmark.png)
         skin/classic/browser/places/bookmark-aero.png                (places/bookmark-aero.png)
@@ -290,7 +285,6 @@ browser.jar:
 % override chrome://browser/skin/aboutSessionRestore-window-icon.png  chrome://browser/skin/preferences/application.png                 os=WINNT osversion<6
 % override chrome://browser/skin/aboutSessionRestore-window-icon.png  chrome://browser/skin/aboutSessionRestore-window-icon-aero.png    os=WINNT osversion>=6
 
-% override chrome://browser/skin/browser.css                          chrome://browser/skin/browser-aero.css                            os=WINNT osversion>=6
 % override chrome://browser/skin/Info.png                             chrome://browser/skin/Info-aero.png                               os=WINNT osversion>=6
 % override chrome://browser/skin/identity.png                         chrome://browser/skin/identity-aero.png                           os=WINNT osversion>=6
 % override chrome://browser/skin/livemark-folder.png                  chrome://browser/skin/livemark-folder-aero.png                    os=WINNT osversion>=6
