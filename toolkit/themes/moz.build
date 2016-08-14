@@ -23,7 +23,3 @@ else:
         DIRS += ['linux']
     elif CONFIG['MOZ_THEME_FASTSTRIPE']:
         DIRS += ['faststripe/global']
-
-if CONFIG['MOZ_SEPARATE_MANIFEST_FOR_THEME_OVERRIDES']:
-    DEFINES['MOZ_SEPARATE_MANIFEST_FOR_THEME_OVERRIDES'] = True
-    
