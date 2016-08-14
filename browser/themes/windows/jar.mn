@@ -86,6 +86,10 @@ browser.jar:
         skin/classic/browser/downloads/contentAreaDownloadsView.css  (downloads/contentAreaDownloadsView.css)
         skin/classic/browser/feeds/feedIcon.png                      (feeds/feedIcon.png)
         skin/classic/browser/feeds/feedIcon16.png                    (feeds/feedIcon16.png)
+        skin/classic/browser/feeds/videoFeedIcon.png                 (feeds/feedIcon.png)
+        skin/classic/browser/feeds/videoFeedIcon16.png               (feeds/feedIcon16.png)
+        skin/classic/browser/feeds/audioFeedIcon.png                 (feeds/feedIcon.png)
+        skin/classic/browser/feeds/audioFeedIcon16.png               (feeds/feedIcon16.png)
         skin/classic/browser/feeds/feed-icons-16.png                 (feeds/feed-icons-16.png)
         skin/classic/browser/feeds/subscribe.css                     (feeds/subscribe.css)
         skin/classic/browser/feeds/subscribe-ui.css                  (feeds/subscribe-ui.css)
@@ -245,10 +249,3 @@ browser.jar:
         skin/classic/browser/syncQuota.css
         skin/classic/browser/syncProgress.css
 #endif
-
-% override chrome://browser/skin/page-livemarks.png                   chrome://browser/skin/feeds/feedIcon16.png
-% override chrome://browser/skin/feeds/audioFeedIcon.png              chrome://browser/skin/feeds/feedIcon.png
-% override chrome://browser/skin/feeds/audioFeedIcon16.png            chrome://browser/skin/feeds/feedIcon16.png
-% override chrome://browser/skin/feeds/videoFeedIcon.png              chrome://browser/skin/feeds/feedIcon.png
-% override chrome://browser/skin/feeds/videoFeedIcon16.png            chrome://browser/skin/feeds/feedIcon16.png
-% override chrome://browser/skin/aboutSessionRestore-window-icon.png  chrome://browser/skin/preferences/application.png                 os!=WINNT

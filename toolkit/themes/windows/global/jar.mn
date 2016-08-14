@@ -67,10 +67,12 @@ toolkit.jar:
         skin/classic/global/arrow/arrow-down.png                 (arrow/arrow-down.png)
         skin/classic/global/arrow/arrow-lft.gif                  (arrow/arrow-lft.gif)
         skin/classic/global/arrow/arrow-lft-dis.gif              (arrow/arrow-lft-dis.gif)
+        skin/classic/global/arrow/arrow-lft-hov.gif              (arrow/arrow-lft.gif)
         skin/classic/global/arrow/arrow-lft-sharp.gif            (arrow/arrow-lft-sharp.gif)
         skin/classic/global/arrow/arrow-lft-sharp-end.gif        (arrow/arrow-lft-sharp-end.gif)
         skin/classic/global/arrow/arrow-rit.gif                  (arrow/arrow-rit.gif)
         skin/classic/global/arrow/arrow-rit-dis.gif              (arrow/arrow-rit-dis.gif)
+        skin/classic/global/arrow/arrow-rit-hov.gif              (arrow/arrow-rit.gif)
         skin/classic/global/arrow/arrow-rit-sharp.gif            (arrow/arrow-rit-sharp.gif)
         skin/classic/global/arrow/arrow-rit-sharp-end.gif        (arrow/arrow-rit-sharp-end.gif)
         skin/classic/global/arrow/arrow-up.gif                   (arrow/arrow-up.gif)
@@ -209,6 +211,3 @@ toolkit.jar:
         skin/classic/global/tree/twisty-open-rtl.png             (tree/twisty-open-rtl.png)
         skin/classic/global/tree/twisty-open-hover.png           (tree/twisty-open-hover.png)
         skin/classic/global/tree/twisty-open-hover-rtl.png       (tree/twisty-open-hover-rtl.png)
-
-% override chrome://global/skin/arrow/arrow-lft-hov.gif           chrome://global/skin/arrow/arrow-lft.gif
-% override chrome://global/skin/arrow/arrow-rit-hov.gif           chrome://global/skin/arrow/arrow-rit.gif
