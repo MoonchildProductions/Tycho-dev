@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-%include ../windowsShared.inc
 %filter substitution
 %define toolbarHighlight rgba(255,255,255,.5)
 %define customToolbarColor hsl(210,75%,92%)
