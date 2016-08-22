@@ -124,9 +124,10 @@ nsWEBPDecoder::WriteInternal(const char *aBuffer, uint32_t aCount)
   // First incremental Image data chunk. Special handling required.
   if (mLastLine == 0 && lastLineRead > 0) {
     imgFrame* aFrame;
-    nsresult res = mImage.EnsureFrame(0, 0, 0, width, height,
-                                       gfxASurface::ImageFormatARGB32,
-                                       (uint8_t**)&mImageData, &imagelength, &aFrame);
+//    nsresult res = mImage.EnsureFrame(0, 0, 0, width, height,
+//                                       gfxASurface::ImageFormatARGB32,
+//                                       (uint8_t**)&mImageData, &imagelength, &aFrame);
+    nsresult res = Decoder::AllocateFrame();
     if (NS_FAILED(res) || !mImageData) {
       PostDecoderError(NS_ERROR_FAILURE);
       return;
