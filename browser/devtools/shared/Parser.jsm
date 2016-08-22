@@ -222,7 +222,7 @@ SyntaxTree.prototype = {
        */
       onFunctionDeclaration: function STW_onFunctionDeclaration(aNode) {
         let functionName = aNode.id.name;
-        if (functionName.toLowerCase().contains(lowerCaseToken)) {
+        if (functionName.toLowerCase().includes(lowerCaseToken)) {
           store.push({
             functionName: functionName,
             functionLocation: aNode.loc
@@ -254,8 +254,8 @@ SyntaxTree.prototype = {
           this.onFunctionExpression(parent);
         }
 
-        if ((functionName && functionName.toLowerCase().contains(lowerCaseToken)) ||
-            (inferredName && inferredName.toLowerCase().contains(lowerCaseToken))) {
+        if ((functionName && functionName.toLowerCase().includes(lowerCaseToken)) ||
+            (inferredName && inferredName.toLowerCase().includes(lowerCaseToken))) {
           store.push({
             functionName: functionName,
             functionLocation: aNode.loc,
@@ -285,7 +285,7 @@ SyntaxTree.prototype = {
           this.onFunctionExpression(parent);
         }
 
-        if (inferredName && inferredName.toLowerCase().contains(lowerCaseToken)) {
+        if (inferredName && inferredName.toLowerCase().includes(lowerCaseToken)) {
           store.push({
             inferredName: inferredName,
             inferredChain: inferredChain,
