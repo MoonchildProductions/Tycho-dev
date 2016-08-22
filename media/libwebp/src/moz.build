@@ -4,10 +4,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-FINAL_LIBRARY = 'gkmedias'
-
-Library('mozwebp')
-
 DIRS += [ 
     'webp',
     'utils',
@@ -17,3 +13,12 @@ DIRS += [
     'dec',
     'demux'
 ]
+
+Library('mozwebp')
+
+# MSVC_ENABLE_PGO = True
+
+if CONFIG['GKMEDIAS_SHARED_LIBRARY']:
+    NO_VISIBILITY_FLAGS = True
+
+FINAL_LIBRARY = 'gkmedias'
