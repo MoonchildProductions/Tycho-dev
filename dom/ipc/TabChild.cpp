@@ -37,9 +37,6 @@
 #include "nsDocShell.h"
 #include "nsEmbedCID.h"
 #include <algorithm>
-#ifdef MOZ_CRASHREPORTER
-#include "nsExceptionHandler.h"
-#endif
 #include "nsFilePickerProxy.h"
 #include "mozilla/dom/Element.h"
 #include "nsIBaseWindow.h"
@@ -1689,10 +1686,6 @@ TabChild::RecvLoadURL(const nsCString& aURI,
         NS_WARNING("WebNavigation()->LoadURI failed. Eating exception, what else can I do?");
     }
 
-#ifdef MOZ_CRASHREPORTER
-    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("URL"), aURI);
-#endif
-
     nsRefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     MOZ_ASSERT(swm);
     swm->LoadRegistrations(aConfiguration.serviceWorkerRegistrations());
@@ -3066,7 +3059,9 @@ TabChild::DidComposite(uint64_t aTransactionId)
   MOZ_ASSERT(mWidget->GetLayerManager());
   MOZ_ASSERT(mWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT);
 
-  ClientLayerManager *manager = static_cast<ClientLayerManager*>(mWidget->GetLayerManager());
+  nsRefPtr<ClientLayerManager> manager =
+    static_cast<ClientLayerManager*>(mWidget->GetLayerManager());
+    
   manager->DidComposite(aTransactionId);
 }
 

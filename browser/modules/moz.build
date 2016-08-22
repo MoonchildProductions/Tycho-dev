@@ -4,39 +4,24 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-BROWSER_CHROME_MANIFESTS += ['test/browser.ini']
-XPCSHELL_TESTS_MANIFESTS += [
-    'test/unit/social/xpcshell.ini',
-    'test/xpcshell/xpcshell.ini',
-]
+
+# XXX: Include this until we convert browser/ to use toolkit promises directly
+EXTRA_JS_MODULES += [ 'promise.js' ]
 
 EXTRA_JS_MODULES += [
-    'BrowserUITelemetry.jsm',
-    'CastingApps.jsm',
-    'Chat.jsm',
-    'ContentClick.jsm',
-    'ContentLinkHandler.jsm',
-    'ContentObservers.jsm',
-    'ContentSearch.jsm',
-    'ContentWebRTC.jsm',
-    'CustomizationTabPreloader.jsm',
-    'DirectoryLinksProvider.jsm',
-    'E10SUtils.jsm',
-    'Feeds.jsm',
+    'BrowserNewTabPreloader.jsm',
+    'CharsetMenu.jsm',
     'FormSubmitObserver.jsm',
     'FormValidationHandler.jsm',
-    'HiddenFrame.jsm',
     'NetworkPrioritizer.jsm',
     'offlineAppCache.jsm',
-    'PanelFrame.jsm',
-    'ProcessHangMonitor.jsm',
-    'ReaderParent.jsm',
-    'RemotePrompt.jsm',
-    'SelfSupportBackend.jsm',
-    'SitePermissions.jsm',
-    'Social.jsm',
-    'TabCrashReporter.jsm',
+    'openLocationLastURL.jsm',
+    'PageMenu.jsm',
+    'PopupNotifications.jsm',
+    'SharedFrame.jsm',
     'WebappManager.jsm',
+    'webappsUI.jsm',
+    'webrtcUI.jsm'
 ]
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
@@ -46,20 +31,9 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
         'WindowsPreviewPerTab.jsm',
     ]
 
-if CONFIG['NIGHTLY_BUILD']:
-    EXTRA_JS_MODULES += [
-        'SignInToWebsite.jsm',
-    ]
-
 EXTRA_PP_JS_MODULES += [
-    'AboutHome.jsm',
-    'PluginContent.jsm',
+    'AboutHomeUtils.jsm',
     'RecentWindow.jsm',
-    'webrtcUI.jsm',
-]
-
-EXTRA_PP_COMPONENTS += [
-    'browsermodules.manifest',
 ]
 
 if CONFIG['MOZILLA_OFFICIAL']:

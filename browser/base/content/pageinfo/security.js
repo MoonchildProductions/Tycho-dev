@@ -1,4 +1,4 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -37,7 +37,7 @@ var security = {
     var isMixed =
       (ui.state & (Components.interfaces.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT |
                    Components.interfaces.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT));
-    var isInsecure =
+    var isInsecure = 
       (ui.state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE);
     var isEV =
       (ui.state & Components.interfaces.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL);
@@ -55,6 +55,7 @@ var security = {
         cAName : issuerName,
         encryptionAlgorithm : undefined,
         encryptionStrength : undefined,
+        encryptionSuite : undefined,
         version: undefined,
         isBroken : isBroken,
         isMixed : isMixed,
@@ -65,8 +66,9 @@ var security = {
 
       var version;
       try {
-        retval.encryptionAlgorithm = status.cipherName;
+        retval.encryptionAlgorithm = status.cipherName; //FIXME: contains suite.
         retval.encryptionStrength = status.secretKeyLength;
+        retval.encryptionSuite = status.cipherName; //status.cipherSuite
         version = status.protocolVersion;
       }
       catch (e) {
@@ -94,12 +96,13 @@ var security = {
         cAName : "",
         encryptionAlgorithm : "",
         encryptionStrength : 0,
+        encryptionSuite : "",
         version: "",
         isBroken : isBroken,
         isMixed : isMixed,
         isEV : isEV,
         cert : null,
-        fullLocation : gWindow.location
+        fullLocation : gWindow.location        
       };
     }
   },
@@ -152,7 +155,7 @@ var security = {
       window.openDialog("chrome://browser/content/preferences/cookies.xul",
                         "Browser:Cookies", "", {filterString : eTLD});
   },
-
+  
   /**
    * Open the login manager window
    */
@@ -167,7 +170,7 @@ var security = {
     }
     else
       window.openDialog("chrome://passwordmgr/content/passwordManager.xul",
-                        "Toolkit:PasswordManager", "",
+                        "Toolkit:PasswordManager", "", 
                         {filterString : this._getSecurityInfo().hostName});
   },
 
@@ -178,10 +181,12 @@ function securityOnLoad() {
   var info = security._getSecurityInfo();
   if (!info) {
     document.getElementById("securityTab").hidden = true;
+    document.getElementById("securityBox").collapsed = true;
     return;
   }
   else {
     document.getElementById("securityTab").hidden = false;
+    document.getElementById("securityBox").collapsed = false;
   }
 
   const pageInfoBundle = document.getElementById("pageinfobundle");
@@ -189,7 +194,7 @@ function securityOnLoad() {
   /* Set Identity section text */
   setText("security-identity-domain-value", info.hostName);
   
-  var owner, verifier;
+  var owner, verifier, generalPageIdentityString;
   if (info.cert && !info.isBroken) {
     // Try to pull out meaningful values.  Technically these fields are optional
     // so we'll employ fallbacks where appropriate.  The EV spec states that Org
@@ -197,6 +202,8 @@ function securityOnLoad() {
     if (info.isEV) {
       owner = info.cert.organization;
       verifier = security.mapIssuerOrganization(info.cAName);
+      generalPageIdentityString = pageInfoBundle.getFormattedString("generalSiteIdentity",
+                                                                    [owner, verifier]);
     }
     else {
       // Technically, a non-EV cert might specify an owner in the O field or not,
@@ -208,16 +215,19 @@ function securityOnLoad() {
       verifier = security.mapIssuerOrganization(info.cAName ||
                                                 info.cert.issuerCommonName ||
                                                 info.cert.issuerName);
+      generalPageIdentityString = owner;
     }
   }
   else {
     // We don't have valid identity credentials.
     owner = pageInfoBundle.getString("securityNoOwner");
     verifier = pageInfoBundle.getString("notset");
+    generalPageIdentityString = owner;
   }
 
   setText("security-identity-owner-value", owner);
   setText("security-identity-verifier-value", verifier);
+  setText("general-security-identity", generalPageIdentityString);
 
   /* Manage the View Cert button*/
   var viewCert = document.getElementById("security-view-cert");
@@ -259,7 +269,7 @@ function securityOnLoad() {
 
   if (info.isBroken) {
     if (info.isMixed) {
-      hdr = pkiBundle.getString("pageInfo_MixedContent");
+    hdr = pkiBundle.getString("pageInfo_MixedContent");
     } else {
       hdr = pkiBundle.getFormattedString("pageInfo_BrokenEncryption",
                                          [info.encryptionAlgorithm,

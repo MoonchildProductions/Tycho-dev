@@ -70,12 +70,11 @@ GTK2_VERSION=2.18.0
 GTK3_VERSION=3.4.0
 WINDRES_VERSION=2.14.90
 W32API_VERSION=3.14
-GNOMEVFS_VERSION=2.0
 GNOMEUI_VERSION=2.2.0
 GCONF_VERSION=1.2.1
 STARTUP_NOTIFICATION_VERSION=0.8
 DBUS_VERSION=0.60
-SQLITE_VERSION=3.8.9
+SQLITE_VERSION=3.13.0
 
 MSMANIFEST_TOOL=
 
@@ -1661,6 +1660,12 @@ else
     _DEFINES_CXXFLAGS='-DMOZILLA_CLIENT -D_MOZILLA_CONFIG_H_ $(ACDEFINES)'
 fi
 
+#FIXME: Work around breaking optimizations performed by GCC 6
+if test "$GCC_MAJOR_VERSION" -eq "6" ; then
+    CFLAGS="$CFLAGS -fno-delete-null-pointer-checks -fno-lifetime-dse -fno-schedule-insns2"
+    CXXFLAGS="$CXXFLAGS -fno-delete-null-pointer-checks -fno-lifetime-dse -fno-schedule-insns2"
+fi
+
 dnl gcc can come with its own linker so it is better to use the pass-thru calls
 dnl MKSHLIB_FORCE_ALL is used to force the linker to include all object
 dnl files present in an archive. MKSHLIB_UNFORCE_ALL reverts the linker to
@@ -1773,36 +1778,6 @@ MOZ_ARG_ENABLE_BOOL(jprof,
 if test -n "$MOZ_JPROF"; then
     MOZ_PROFILING=1
     AC_DEFINE(MOZ_JPROF)
-fi
-
-dnl ========================================================
-dnl SPS Profiler
-dnl ========================================================
-MOZ_ENABLE_PROFILER_SPS=1
-
-case "${OS_TARGET}" in
-Android)
-    case "${CPU_ARCH}" in
-    x86 | arm) ;;
-    *)
-        MOZ_ENABLE_PROFILER_SPS=
-    esac
-    ;;
-Linux)
-    case "${CPU_ARCH}" in
-    x86 | x86_64) ;;
-    *)
-        MOZ_ENABLE_PROFILER_SPS=
-    esac
-    ;;
-WINNT|Darwin) ;;
-*)
-    MOZ_ENABLE_PROFILER_SPS=
-    ;;
-esac
-
-if test -n "$MOZ_ENABLE_PROFILER_SPS"; then
-    AC_DEFINE(MOZ_ENABLE_PROFILER_SPS)
 fi
 
 dnl ========================================================
@@ -2125,7 +2100,7 @@ ia64*-hpux*)
     TARGET_NSPR_MDCPUCFG='\"md/_linux.cfg\"'
 
     MOZ_GFX_OPTIMIZE_MOBILE=1
-    MOZ_OPTIMIZE_FLAGS="-Os -fno-reorder-functions"
+    MOZ_OPTIMIZE_FLAGS="-O2 -fno-reorder-functions"
     if test -z "$CLANG_CC"; then
        MOZ_OPTIMIZE_FLAGS="-freorder-blocks $MOZ_OPTIMIZE_FLAGS"
     fi
@@ -2140,7 +2115,7 @@ ia64*-hpux*)
         MOZ_OPTIMIZE_FLAGS="-O2"
     elif test "$GNU_CC" -o "$GNU_CXX"; then
         MOZ_PGO_OPTIMIZE_FLAGS="-O3"
-        MOZ_OPTIMIZE_FLAGS="-Os"
+        MOZ_OPTIMIZE_FLAGS="-O2"
         if test -z "$CLANG_CC"; then
            MOZ_OPTIMIZE_FLAGS="-freorder-blocks $MOZ_OPTIMIZE_FLAGS"
         fi
@@ -2226,7 +2201,7 @@ ia64*-hpux*)
         MKSHLIB_FORCE_ALL=
         MKSHLIB_UNFORCE_ALL=
         dnl Set subsystem version 6.
-        WIN32_SUBSYSTEM_VERSION=6.01
+        WIN32_SUBSYSTEM_VERSION=6.00
         WIN32_CONSOLE_EXE_LDFLAGS=-SUBSYSTEM:CONSOLE,$WIN32_SUBSYSTEM_VERSION
         WIN32_GUI_EXE_LDFLAGS=-SUBSYSTEM:WINDOWS,$WIN32_SUBSYSTEM_VERSION
         DSO_LDOPTS=-SUBSYSTEM:WINDOWS,$WIN32_SUBSYSTEM_VERSION
@@ -4779,7 +4754,7 @@ then
 fi
 
 dnl ========================================================
-dnl = GnomeVFS, GIO and GConf support module
+dnl = GIO and GConf support module
 dnl ========================================================
 
 if test "$MOZ_X11"
@@ -4791,31 +4766,6 @@ then
         MOZ_ENABLE_GIO=1
         MOZ_ENABLE_GCONF=1
     fi
-
-    dnl ========================================================
-    dnl = GnomeVFS support module
-    dnl ========================================================
-    MOZ_ARG_ENABLE_BOOL(gnomevfs,
-    [  --enable-gnomevfs       Enable GnomeVFS support (default: disabled)],
-        MOZ_ENABLE_GNOMEVFS=force,
-        MOZ_ENABLE_GNOMEVFS=)
-
-    if test "$MOZ_ENABLE_GNOMEVFS"
-    then
-        PKG_CHECK_MODULES(MOZ_GNOMEVFS, gnome-vfs-2.0 >= $GNOMEVFS_VERSION gnome-vfs-module-2.0 >= $GNOMEVFS_VERSION,[
-            MOZ_GNOMEVFS_LIBS=`echo $MOZ_GNOMEVFS_LIBS | sed 's/-llinc\>//'`
-            MOZ_ENABLE_GNOMEVFS=1
-            AC_DEFINE(MOZ_ENABLE_GNOMEVFS)
-        ],[
-            if test "$MOZ_ENABLE_GNOMEVFS" = "force"
-            then
-                AC_MSG_ERROR([* * * Could not find gnome-vfs-module-2.0 >= $GNOMEVFS_VERSION])
-            fi
-            MOZ_ENABLE_GNOMEVFS=
-        ])
-    fi
-
-    AC_SUBST(MOZ_ENABLE_GNOMEVFS)
 
     dnl ========================================================
     dnl = GIO support module
@@ -5372,23 +5322,6 @@ MOZ_ARG_DISABLE_BOOL(fmp4,
 
 if test -n "$MOZ_FMP4"; then
     AC_DEFINE(MOZ_FMP4)
-    MOZ_EME=1
-fi;
-
-dnl ========================================================
-dnl = EME support
-dnl ========================================================
-
-MOZ_ARG_DISABLE_BOOL(eme,
-[  --disable-eme  Disable support for Encrypted Media Extensions],
-    MOZ_EME=,
-    MOZ_EME=1)
-
-if test -n "$MOZ_EME"; then
-    if test -z "$MOZ_FMP4"; then
-        AC_MSG_ERROR([Encrypted Media Extension support requires Fragmented MP4 support])
-    fi
-    AC_DEFINE(MOZ_EME)
 fi;
 
 dnl ========================================================
@@ -5683,7 +5616,7 @@ WINNT|Darwin|Android)
     ;;
 *)
     MOZ_GSTREAMER=1
-    GST_API_VERSION=0.10
+    GST_API_VERSION=1.0
     ;;
 esac
 
@@ -6087,69 +6020,6 @@ AC_SUBST(MOZ_GAMEPAD)
 AC_SUBST(MOZ_GAMEPAD_BACKEND)
 
 dnl ========================================================
-dnl = Breakpad crash reporting (on by default on supported platforms)
-dnl ========================================================
-
-case $target in
-i?86-*-mingw*|x86_64-*-mingw*)
-  MOZ_CRASHREPORTER=1
-  ;;
-i?86-apple-darwin*|x86_64-apple-darwin*)
-  MOZ_CRASHREPORTER=1
-  ;;
-i?86-*-linux*|x86_64-*-linux*|arm-*-linux*)
-  if test "$MOZ_ENABLE_GTK"; then
-    MOZ_CRASHREPORTER=1
-  fi
-  ;;
-*-android*|*-linuxandroid*)
-  MOZ_CRASHREPORTER=1
-  ;;
-*solaris*)
-  MOZ_CRASHREPORTER=1
-  ;;
-esac
-
-MOZ_ARG_DISABLE_BOOL(crashreporter,
-[  --disable-crashreporter Disable breakpad crash reporting],
-    [MOZ_CRASHREPORTER=],
-    [MOZ_CRASHREPORTER=F # Force enable breakpad])
-
-if test "$OS_ARCH" != "$HOST_OS_ARCH" -a "$OS_ARCH" != "WINNT"; then
-  if test "$MOZ_CRASHREPORTER" = F; then
-    AC_MSG_ERROR([Cannot --enable-crashreporter, as breakpad tools do not support compiling on $HOST_OS_ARCH while targeting $OS_ARCH.])
-  fi
-  MOZ_CRASHREPORTER=
-fi
-
-if test -n "$MOZ_CRASHREPORTER"; then
-   AC_DEFINE(MOZ_CRASHREPORTER)
-
-  if test "$OS_TARGET" = "Linux" -o "$OS_ARCH" = "SunOS" && \
-    test -z "$SKIP_LIBRARY_CHECKS"; then
-    PKG_CHECK_MODULES(MOZ_GTHREAD, gthread-2.0)
-  fi
-
-  if test "$OS_ARCH" = "WINNT"; then
-    if test -z "$HAVE_64BIT_BUILD"; then
-      MOZ_CRASHREPORTER_INJECTOR=1
-      AC_DEFINE(MOZ_CRASHREPORTER_INJECTOR)
-    fi
-  fi
-fi
-
-MOZ_ARG_WITH_STRING(crashreporter-enable-percent,
-[  --with-crashreporter-enable-percent=NN
-                          Enable sending crash reports by default on NN% of users. (default=100)],
-[ val=`echo $withval | sed 's/[^0-9]//g'`
-    MOZ_CRASHREPORTER_ENABLE_PERCENT="$val"])
-
-if test -z "$MOZ_CRASHREPORTER_ENABLE_PERCENT"; then
-   MOZ_CRASHREPORTER_ENABLE_PERCENT=100
-fi
-AC_DEFINE_UNQUOTED(MOZ_CRASHREPORTER_ENABLE_PERCENT, $MOZ_CRASHREPORTER_ENABLE_PERCENT)
-
-dnl ========================================================
 dnl = libjpeg-turbo configuration
 dnl ========================================================
 MOZ_LIBJPEG_TURBO=
@@ -6280,19 +6150,6 @@ MOZ_ARG_ENABLE_STRING(extensions,
     fi
 done],
     MOZ_EXTENSIONS="$MOZ_EXTENSIONS_DEFAULT")
-
-if test -z "$MOZ_ENABLE_GNOMEVFS" -a `echo "$MOZ_EXTENSIONS" | grep -c gnomevfs` -ne 0; then
-    # Suppress warning on non-X11 platforms
-    if test -n "$MOZ_X11"; then
-        AC_MSG_WARN([Removing gnomevfs from MOZ_EXTENSIONS due to no --enable-gnomevfs.])
-    fi
-    MOZ_EXTENSIONS=`echo $MOZ_EXTENSIONS | sed -e 's|gnomevfs||'`
-fi
-
-dnl Do not build gnomevfs with libxul based apps
-if test -n "$LIBXUL_SDK_DIR" -a `echo "$MOZ_EXTENSIONS" | grep -c gnomevfs` -ne 0; then
-    MOZ_EXTENSIONS=`echo $MOZ_EXTENSIONS | sed -e 's|gnomevfs||'`
-fi
 
 if test -z "$MOZ_ENABLE_GIO" -a `echo "$MOZ_EXTENSIONS" | grep -c gio` -ne 0; then
     # Suppress warning on non-X11 platforms
@@ -7339,24 +7196,6 @@ fi
 
 AC_SUBST_LIST(MOZ_GLUE_WRAP_LDFLAGS)
 export MOZ_GLUE_WRAP_LDFLAGS
-
-dnl ========================================================
-dnl = Enable static checking using gcc-dehydra
-dnl ========================================================
-
-MOZ_ARG_WITH_STRING(static-checking,
-[  --with-static-checking=path/to/gcc_dehydra.so
-                          Enable static checking of code using GCC-dehydra],
-    DEHYDRA_PATH=$withval,
-    DEHYDRA_PATH= )
-
-if test -n "$DEHYDRA_PATH"; then
-    if test ! -f "$DEHYDRA_PATH"; then
-        AC_MSG_ERROR([The dehydra plugin is not at the specified path.])
-    fi
-    AC_DEFINE(NS_STATIC_CHECKING)
-fi
-AC_SUBST(DEHYDRA_PATH)
 
 dnl ========================================================
 dnl = Enable using the clang plugin to build
@@ -8529,7 +8368,6 @@ AC_SUBST(MOZ_DEBUG_DISABLE_DEFS)
 AC_SUBST(MOZ_DEBUG_LDFLAGS)
 AC_SUBST(WARNINGS_AS_ERRORS)
 AC_SUBST(MOZ_EXTENSIONS)
-AC_SUBST(MOZ_ENABLE_PROFILER_SPS)
 AC_SUBST(MOZ_JPROF)
 AC_SUBST(MOZ_SHARK)
 AC_SUBST(MOZ_INSTRUMENTS)
@@ -8560,9 +8398,6 @@ AC_SUBST(ACCESSIBILITY)
 AC_SUBST(MOZ_SPELLCHECK)
 AC_SUBST(MOZ_ANDROID_APZ)
 AC_SUBST(MOZ_ANDROID_ANR_REPORTER)
-AC_SUBST(MOZ_CRASHREPORTER)
-AC_SUBST(MOZ_CRASHREPORTER_INJECTOR)
-AC_SUBST(MOZ_CRASHREPORTER_UPLOAD_FULL_SYMBOLS)
 AC_SUBST(MOZ_MAINTENANCE_SERVICE)
 AC_SUBST(MOZ_STUB_INSTALLER)
 AC_SUBST(MOZ_VERIFY_MAR_SIGNATURE)
@@ -8682,8 +8517,7 @@ AC_SUBST(MOZ_CHILD_PROCESS_BUNDLE)
 # profile name and remoting. If not set, defaults to MOZ_APP_NAME.
 # - MOZ_APP_PROFILE: When set, used for application.ini's
 # "Profile" field, which controls profile location.
-# - MOZ_APP_ID: When set, used for application.ini's "ID" field, and
-# crash reporter server url.
+# - MOZ_APP_ID: When set, used for application.ini's "ID" field.
 # - MOZ_PROFILE_MIGRATOR: When set, enables profile migrator.
 
 if test -z "$MOZ_APP_NAME"; then
@@ -8769,7 +8603,7 @@ fi
 dnl If we have any service that uploads data (and requires data submission
 dnl policy alert), set MOZ_DATA_REPORTING.
 dnl We need SUBST for build system and DEFINE for xul preprocessor.
-if test -n "$MOZ_TELEMETRY_REPORTING" || test -n "$MOZ_SERVICES_HEALTHREPORT" || test -n "$MOZ_CRASHREPORTER"; then
+if test -n "$MOZ_TELEMETRY_REPORTING" || test -n "$MOZ_SERVICES_HEALTHREPORT"; then
   MOZ_DATA_REPORTING=1
   AC_DEFINE(MOZ_DATA_REPORTING)
   AC_SUBST(MOZ_DATA_REPORTING)
@@ -8922,7 +8756,6 @@ AC_SUBST(MOZ_WEBM)
 AC_SUBST(MOZ_WMF)
 AC_SUBST(MOZ_FFMPEG)
 AC_SUBST(MOZ_FMP4)
-AC_SUBST(MOZ_EME)
 AC_SUBST(MOZ_DIRECTSHOW)
 AC_SUBST(MOZ_ANDROID_OMX)
 AC_SUBST(MOZ_APPLEMEDIA)
@@ -8953,6 +8786,9 @@ AC_SUBST(SOCORRO_SYMBOL_UPLOAD_TOKEN_FILE)
 
 AC_SUBST(MOZ_ENABLE_SZIP)
 AC_SUBST(MOZ_SZIP_FLAGS)
+
+AC_DEFINE(MOZ_PHOENIX_EXTENSIONS)
+AC_SUBST(MOZ_PHOENIX_EXTENSIONS)
 
 dnl Host JavaScript runtime, if any, to use during cross compiles.
 AC_SUBST(JS_BINARY)
@@ -9187,6 +9023,9 @@ if test -z "$MOZ_NATIVE_JEMALLOC" -a "$MOZ_MEMORY" && test -n "$MOZ_JEMALLOC3" -
   fi
   # Force disable DSS support in jemalloc.
   ac_configure_args="$ac_configure_args ac_cv_func_sbrk=false"
+
+  # Make Linux builds munmap freed chunks instead of recycling them.
+  ac_configure_args="$ac_configure_args --enable-munmap"
 
   if ! test -e memory/jemalloc; then
     mkdir -p memory/jemalloc

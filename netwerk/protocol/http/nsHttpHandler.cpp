@@ -95,7 +95,7 @@ extern PRThread *gSocketThread;
 #define NS_HTTP_PROTOCOL_FLAGS (URI_STD | ALLOWS_PROXY | ALLOWS_PROXY_HTTP | URI_LOADABLE_BY_ANYONE)
 
 // Firefox compatibility version we claim in our UA
-#define MOZILLA_COMPATVERSION "38.9"
+#define MOZILLA_COMPATVERSION "45.9"
 
 //-----------------------------------------------------------------------------
 
@@ -289,7 +289,7 @@ nsHttpHandler::Init()
     if (mCompatFirefoxEnabled) {
       mMisc.AssignLiteral("rv:" MOZILLA_COMPATVERSION);
     } else {
-    mMisc.AssignLiteral("rv:" MOZILLA_UAVERSION);
+      mMisc.AssignLiteral("rv:" MOZILLA_UAVERSION);
     }
 
     mCompatGecko.AssignLiteral("Gecko/20100101");
@@ -678,19 +678,16 @@ nsHttpHandler::BuildUserAgent()
     mUserAgent += '/';
     mUserAgent += mProductSub;
 
-    bool isFirefox = mAppName.EqualsLiteral("Firefox");
-    if (isFirefox || mCompatFirefoxEnabled) {
+    if (mCompatFirefoxEnabled) {
         // Provide "Firefox/x.y" (compatibility) app token
         mUserAgent += ' ';
         mUserAgent += mCompatFirefox;
     }
-    if (!isFirefox) {
-        // App portion
-        mUserAgent += ' ';
-        mUserAgent += mAppName;
-        mUserAgent += '/';
-        mUserAgent += mAppVersion;
-    }
+    // App portion
+    mUserAgent += ' ';
+    mUserAgent += mAppName;
+    mUserAgent += '/';
+    mUserAgent += mAppVersion;
 }
 
 #ifdef XP_WIN
@@ -861,6 +858,7 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
 {
     nsresult rv = NS_OK;
     int32_t val;
+    bool cVar;
 
     LOG(("nsHttpHandler::PrefsChanged [pref=%s]\n", pref));
 
@@ -872,18 +870,25 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
     // UA components
     //
 
-    bool cVar = false;
-
     // compatibility mode prefs
-    if (PREF_CHANGED(UA_PREF("compatMode.gecko"))) {
-        rv = prefs->GetBoolPref(UA_PREF("compatMode.gecko"), &cVar);
-        mCompatGeckoEnabled = (NS_SUCCEEDED(rv) && cVar);
-        mUserAgentIsDirty = true;
-    }
-    if (PREF_CHANGED(UA_PREF("compatMode.firefox"))) {
-        rv = prefs->GetBoolPref(UA_PREF("compatMode.firefox"), &cVar);
-        mCompatFirefoxEnabled = (NS_SUCCEEDED(rv) && cVar);
-        
+    if (PREF_CHANGED(UA_PREF("compatMode"))) {
+        rv = prefs->GetIntPref(UA_PREF("compatMode"), &val);
+        if (NS_SUCCEEDED(rv)) {
+          switch(val) {
+            case 1: // Generic Gecko
+                    mCompatGeckoEnabled = true;
+                    mCompatFirefoxEnabled = false;
+                    break;
+            case 2: // Firefox Compatibility
+                    mCompatGeckoEnabled = true;
+                    mCompatFirefoxEnabled = true;
+                    break;
+            default: // Native
+                     mCompatGeckoEnabled = false;
+                     mCompatFirefoxEnabled = false;
+                     break;
+          }
+        }
         // Update UA components as-needed for this change:
         // Compatmode on ->  rv:{FF-appversion}  Goanna/{Goanna-version}
         // Compatmode off -> rv:{Goanna-version} Goanna/{BuildID}

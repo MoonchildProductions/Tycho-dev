@@ -2838,6 +2838,16 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   nsAutoCString tCspHeaderValue, tCspROHeaderValue;
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+  if (!httpChannel) {
+    // check baseChannel for CSP when loading a multipart channel
+    nsCOMPtr<nsIMultiPartChannel> multipart = do_QueryInterface(aChannel);
+    if (multipart) {
+      nsCOMPtr<nsIChannel> baseChannel;
+      multipart->GetBaseChannel(getter_AddRefs(baseChannel));
+      httpChannel = do_QueryInterface(baseChannel);
+    }
+  }
+
   if (httpChannel) {
     httpChannel->GetResponseHeader(
         NS_LITERAL_CSTRING("content-security-policy"),
@@ -4543,32 +4553,6 @@ nsDocument::SetScopeObject(nsIGlobalObject* aGlobal)
     mHasHadScriptHandlingObject = true;
   }
 }
-
-#ifdef MOZ_EME
-static void
-CheckIfContainsEMEContent(nsISupports* aSupports, void* aContainsEME)
-{
-  nsCOMPtr<nsIDOMHTMLMediaElement> domMediaElem(do_QueryInterface(aSupports));
-  if (domMediaElem) {
-    nsCOMPtr<nsIContent> content(do_QueryInterface(domMediaElem));
-    MOZ_ASSERT(content, "aSupports is not a content");
-    HTMLMediaElement* mediaElem = static_cast<HTMLMediaElement*>(content.get());
-    bool* contains = static_cast<bool*>(aContainsEME);
-    if (mediaElem->GetMediaKeys()) {
-      *contains = true;
-    }
-  }
-}
-
-bool
-nsDocument::ContainsEMEContent()
-{
-  bool containsEME = false;
-  EnumerateActivityObservers(CheckIfContainsEMEContent,
-                             static_cast<void*>(&containsEME));
-  return containsEME;
-}
-#endif // MOZ_EME
 
 static void
 CheckIfContainsMSEContent(nsISupports* aSupports, void* aContainsMSE)
@@ -8318,7 +8302,7 @@ nsDocument::IsScriptEnabled()
 {
   // If this document is sandboxed without 'allow-scripts'
   // script is not enabled
-  if (mSandboxFlags & SANDBOXED_SCRIPTS) {
+  if (HasScriptsBlockedBySandbox()) {
     return false;
   }
 
@@ -8844,14 +8828,6 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
     }
   }
 #endif // MOZ_WEBRTC
-
-#ifdef MOZ_EME
-  // Don't save presentations for documents containing EME content, so that
-  // CDMs reliably shutdown upon user navigation.
-  if (ContainsEMEContent()) {
-    return false;
-  }
-#endif
 
   // Don't save presentations for documents containing MSE content, to
   // reduce memory usage.
@@ -12758,6 +12734,12 @@ nsDocument::Evaluate(const nsAString& aExpression, nsIDOMNode* aContextNode,
 {
   return XPathEvaluator()->Evaluate(aExpression, aContextNode, aResolver, aType,
                                     aInResult, aResult);
+}
+
+bool
+nsIDocument::HasScriptsBlockedBySandbox()
+{
+  return mSandboxFlags & SANDBOXED_SCRIPTS;
 }
 
 XPathEvaluator*

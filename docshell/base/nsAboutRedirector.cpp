@@ -45,12 +45,10 @@ static RedirEntry kRedirMap[] = {
   },
   { "plugins", "chrome://global/content/plugins.html", 0 },
   { "config", "chrome://global/content/config.xul", 0 },
-#ifdef MOZ_CRASHREPORTER
-  { "crashes", "chrome://global/content/crashes.xhtml", 0 },
-#endif
   {
     "logo", "chrome://branding/content/about.png",
-    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT
+    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+    nsIAboutModule::MAKE_LINKABLE
   },
   {
     "buildconfig", "chrome://global/content/buildconfig.html",
@@ -105,7 +103,9 @@ static RedirEntry kRedirMap[] = {
   {
     "srcdoc", "about:blank",
     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
-      nsIAboutModule::HIDE_FROM_ABOUTABOUT
+      nsIAboutModule::HIDE_FROM_ABOUTABOUT |
+      // Needs to be linkable so content can touch its own srcdoc frames
+      nsIAboutModule::MAKE_LINKABLE
   }
 };
 static const int kRedirTotal = mozilla::ArrayLength(kRedirMap);

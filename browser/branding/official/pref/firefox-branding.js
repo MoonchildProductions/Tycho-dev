@@ -1,18 +1,20 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+#filter substitution
+
+// ****************** App/Update/General ******************
 
 pref("startup.homepage_override_url","http://www.palemoon.org/releasenotes.shtml");
 pref("startup.homepage_welcome_url","http://www.palemoon.org/firstrun.shtml");
-// Interval: Time between checks for a new version (in seconds)
+// Interval: Time between checks for a new version (in seconds) -- 2 days for Pale Moon
 pref("app.update.interval", 172800);
 pref("app.update.auto", false);
 pref("app.update.enabled", true);
+// URL for update checks, re-enabled on palemoon.org (369)
+pref("app.update.url", "https://www.palemoon.org/update/%VERSION%/%BUILD_TARGET%/update.xml");
+pref("app.update.promptWaitTime", 86400); 
 // The time interval between the downloading of mar file chunks in the
 // background (in seconds)
 pref("app.update.download.backgroundInterval", 600);
 // Give the user x seconds to react before showing the big UI. default=48 hours
-pref("app.update.url", "https://www.palemoon.org/update/%VERSION%/%BUILD_TARGET%/update.xml");
 pref("app.update.promptWaitTime", 172800);
 // URL user can browse to manually if for some reason all update installation
 // attempts fail.
@@ -20,21 +22,18 @@ pref("app.update.url.manual", "http://www.palemoon.org/");
 // A default value for the "More information about this update" link
 // supplied in the "An update is available" page of the update wizard. 
 pref("app.update.url.details", "http://www.palemoon.org/releasenotes.shtml");
+// Additional Update fixes - no SSL damnit, I don't have a cert (4.0)
 pref("app.update.cert.checkAttributes", false);
 pref("app.update.cert.requireBuiltIn", false);
-// The number of days a binary is permitted to be old
-// without checking for an update.  This assumes that
-// app.update.checkInstallTime is true.
-pref("app.update.checkInstallTime.days", 63);
+// Make sure we shortcut out of a11y to save walking unnecessary code
+pref("accessibility.force_disabled", 1);
 
-// Number of usages of the web console or scratchpad.
-// If this is less than 5, then pasting code into the web console or scratchpad is disabled
-pref("devtools.selfxss.count", 20);
+// ****************** Release notes and vendor URLs ******************
 
 pref("app.releaseNotesURL", "http://www.palemoon.org/releasenotes.shtml");
 pref("app.vendorURL", "http://www.palemoon.org/");
 pref("app.support.baseURL", "http://www.palemoon.org/support/");
-
+pref("browser.mixedcontent.warning.infoURL", "http://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/mixed-content/");
 //Add-on window fixes
 pref("extensions.getAddons.browseAddons", "https://addons.mozilla.org/%LOCALE%/firefox");
 pref("extensions.getAddons.maxResults", 10);
@@ -43,6 +42,8 @@ pref("extensions.getAddons.recommended.url", "https://addons.palemoon.org/integr
 pref("extensions.getAddons.search.browseURL", "https://addons.palemoon.org/integration/addon-manager/external/search?q=%TERMS%");
 pref("extensions.getAddons.search.url", "https://addons.palemoon.org/integration/addon-manager/internal/search?q=%TERMS%&locale=%LOCALE%&os=%OS%&version=%VERSION%");
 pref("extensions.getMoreThemesURL", "https://addons.palemoon.org/integration/addon-manager/external/themes");
+pref("extensions.blocklist.url", "https://addons.mozilla.org/blocklist/3/firefox/%APP_VERSION%/%PRODUCT%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/");
+pref("extensions.blocklist.itemURL", "https://addons.mozilla.org/%LOCALE%/firefox/blocked/%blockID%");
 pref("extensions.webservice.discoverURL","http://addons.palemoon.org/integration/addon-manager/internal/discover/");
 pref("extensions.getAddons.cache.enabled", false);
 pref("extensions.getAddons.get.url","https://addons.palemoon.org/integration/addon-manager/internal/get?addonguid=%IDS%&os=%OS%&version=%VERSION%");
@@ -59,6 +60,9 @@ pref("browser.geolocation.warning.infoURL", "http://www.mozilla.com/%LOCALE%/fir
 //add-on/plugin blocklist -> Palemoon.org
 pref("extensions.blocklist.url","http://blocklist.palemoon.org/%VERSION%/blocklist.xml");
 pref("extensions.blocklist.itemURL", "http://blocklist.palemoon.org/info/?id=%blockID%");
+
+// ****************** domain-specific UAs ******************
+#include ../../common/uaoverrides.inc
 
 // ****************** Extensions/plugins ******************
 
@@ -83,7 +87,51 @@ pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.typed", true);
 
 //Set tabs NOT on top
-pref("browser.tabs.onTop",false);
+pref("browser.tabs.onTop",false); 
+
+// ****************** Security ******************
+
+// Known embedding domains that do NOT do things properly and should provide
+// a filter-disabling header, but don't.
+pref("security.xssfilter.srcwhitelist", "googleusercontent.com,embed.ly,embedly.com,msads.net");
+
+// Known embedded target domains that do things properly (no XSS vulnerability)
+pref("security.xssfilter.whitelist", "paypalobjects.com,yimg.com");
+
+// ****************** Misc. config ******************
+
+// Download manager
+pref("browser.download.manager.flashCount", 10);
+pref("browser.download.manager.scanWhenDone", false); //NIB, make sure to disable to prevent hangups
+pref("browser.altClickSave", true); //SBaD,M! (#2)
+
+//plugin kill timeout
+pref("dom.ipc.plugins.timeoutSecs", 20);
+
+//Automatically update extensions by default
+pref("extensions.update.autoUpdateDefault", true);
+
+//Improve memory handling for js
+pref("javascript.options.mem.gc_per_compartment", true);
+pref("javascript.options.mem.high_water_mark", 64);
+pref("javascript.options.mem.max", -1);
+pref("javascript.options.gc_on_memory_pressure", true);
+pref("javascript.options.mem.disable_explicit_compartment_gc", true);
+//add IGC and adjust time slice
+pref("javascript.options.mem.gc_incremental",true);
+pref("javascript.options.mem.gc_incremental_slice_ms",20);
+
+//DOM
+pref("dom.disable_window_status_change", false); //Allow status feedback by default
+//Set max script runtimes to sane values
+pref("dom.max_chrome_script_run_time", 90); //Some addons need ample time!
+pref("dom.max_script_run_time", 20); //Should be plenty for a page script to do what it needs
+
+//Media components
+
+//Image decoding tweaks
+pref("image.mem.max_ms_before_yield", 50);
+pref("image.mem.decode_bytes_at_a_time", 65536); //larger chunks
 
 //store sessions less frequently to prevent redundant mem usage by storing too much
 pref("browser.sessionstore.interval",60000); //every minute instead of every 10 seconds

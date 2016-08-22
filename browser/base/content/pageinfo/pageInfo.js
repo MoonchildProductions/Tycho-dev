@@ -325,7 +325,7 @@ function onLoadPageInfo()
              window.arguments[0];
 
   if (!args || !args.doc) {
-    gWindow = window.opener.gBrowser.selectedBrowser.contentWindowAsCPOW;
+    gWindow = window.opener.content;
     gDocument = gWindow.document;
   }
 
@@ -338,6 +338,10 @@ function onLoadPageInfo()
   Components.classes["@mozilla.org/observer-service;1"]
             .getService(Components.interfaces.nsIObserverService)
             .notifyObservers(window, "page-info-dialog-loaded", null);
+  
+  // Make sure the page info window gets focus even if a doorhanger might
+  // otherwise (async) steal it.
+  window.focus();
 }
 
 function loadPageInfo()
@@ -444,6 +448,14 @@ function loadTab(args)
   radioGroup.focus();
 }
 
+function onClickMore()
+{
+  var radioGrp = document.getElementById("viewGroup");
+  var radioElt = document.getElementById("securityTab");
+  radioGrp.selectedItem = radioElt;
+  showTab('security');
+}
+
 function toggleGroupbox(id)
 {
   var elt = document.getElementById(id);
@@ -469,7 +481,8 @@ function openCacheEntry(key, cb)
     },
     onCacheEntryAvailable: function(entry, isNew, appCache, status) {
       cb(entry);
-    }
+    },
+    get mainThreadOnly() { return true; }
   };
   diskStorage.asyncOpenURI(Services.io.newURI(key, null, null), "", nsICacheStorage.OPEN_READONLY, checkCacheListener);
 }

@@ -1,4 +1,4 @@
-# -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+# -*- Mode: javascript; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -98,19 +98,9 @@ const gXPInstallObserver = {
                               action, null, options);
       break;
     case "addon-install-origin-blocked": {
-      let originatingHost;
-      try {
-        originatingHost = installInfo.originatingURI.host;
-      } catch (ex) {
-        // Need to deal with missing originatingURI and with about:/data: URIs more gracefully,
-        // see bug 1063418 - but for now, bail:
-        return;
-      }
-      messageString = gNavigatorBundle.getFormattedString("xpinstallPromptWarning",
-                        [brandShortName, originatingHost]);
+      messageString = gNavigatorBundle.getFormattedString("xpinstallPromptWarningOrigin",
+                        [brandShortName]);
 
-      let secHistogram = Components.classes["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry).getHistogramById("SECURITY_UI");
-      secHistogram.add(Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED);
       let popup = PopupNotifications.show(browser, notificationID,
                                           messageString, anchorID,
                                           null, null, options);
@@ -128,17 +118,14 @@ const gXPInstallObserver = {
       messageString = gNavigatorBundle.getFormattedString("xpinstallPromptWarning",
                         [brandShortName, originatingHost]);
 
-      let secHistogram = Components.classes["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry).getHistogramById("SECURITY_UI");
       action = {
         label: gNavigatorBundle.getString("xpinstallPromptAllowButton"),
         accessKey: gNavigatorBundle.getString("xpinstallPromptAllowButton.accesskey"),
         callback: function() {
-          secHistogram.add(Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED_CLICK_THROUGH);
           installInfo.install();
         }
       };
 
-      secHistogram.add(Ci.nsISecurityUITelemetry.WARNING_ADDON_ASKING_PREVENTED);
       let popup = PopupNotifications.show(browser, notificationID, messageString,
                                           anchorID, action, null, options);
       removeNotificationOnEnd(popup, installInfo.installs);
@@ -178,6 +165,8 @@ const gXPInstallObserver = {
         let error = (host || install.error == 0) ? "addonError" : "addonLocalError";
         if (install.error != 0)
           error += install.error;
+        else if (install.addon.jetsdk)
+          error += "JetSDK";
         else if (install.addon.blocklistState == Ci.nsIBlocklistService.STATE_BLOCKED)
           error += "Blocklisted";
         else
@@ -230,6 +219,50 @@ const gXPInstallObserver = {
     }
   }
 };
+
+/*
+ * When addons are installed/uninstalled, check and see if the number of items
+ * on the add-on bar changed:
+ * - If an add-on was installed, incrementing the count, show the bar.
+ * - If an add-on was uninstalled, and no more items are left, hide the bar.
+ */
+let AddonsMgrListener = {
+  get addonBar() document.getElementById("addon-bar"),
+  get statusBar() document.getElementById("status-bar"),
+  getAddonBarItemCount: function() {
+    // Take into account the contents of the status bar shim for the count.
+    var itemCount = this.statusBar.childNodes.length;
+
+    var defaultOrNoninteractive = this.addonBar.getAttribute("defaultset")
+                                      .split(",")
+                                      .concat(["separator", "spacer", "spring"]);
+    for (let item of this.addonBar.currentSet.split(",")) {
+      if (defaultOrNoninteractive.indexOf(item) == -1)
+        itemCount++;
+    }
+
+    return itemCount;
+  },
+  onInstalling: function(aAddon) {
+    this.lastAddonBarCount = this.getAddonBarItemCount();
+  },
+  onInstalled: function(aAddon) {
+    if (this.getAddonBarItemCount() > this.lastAddonBarCount)
+      setToolbarVisibility(this.addonBar, true);
+  },
+  onUninstalling: function(aAddon) {
+    this.lastAddonBarCount = this.getAddonBarItemCount();
+  },
+  onUninstalled: function(aAddon) {
+    if (this.getAddonBarItemCount() == 0)
+      setToolbarVisibility(this.addonBar, false);
+  },
+  onEnabling: function(aAddon) this.onInstalling(),
+  onEnabled: function(aAddon) this.onInstalled(),
+  onDisabling: function(aAddon) this.onUninstalling(),
+  onDisabled: function(aAddon) this.onUninstalled(),
+};
+
 
 var LightWeightThemeWebInstaller = {
   handleEvent: function (event) {
@@ -416,10 +449,6 @@ var LightWeightThemeWebInstaller = {
     var pm = Services.perms;
 
     var uri = node.ownerDocument.documentURIObject;
-
-    if (!uri.schemeIs("https"))
-      return false;
-
     return pm.testPermission(uri, "install") == pm.ALLOW_ACTION;
   },
 
