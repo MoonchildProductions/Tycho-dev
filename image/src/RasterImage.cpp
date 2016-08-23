@@ -902,6 +902,104 @@ private:
   nsIntRect mNewRefreshArea;
 };
 
+RawAccessFrameRef
+RasterImage::InternalAddFrame(uint32_t aFrameNum,
+                              const nsIntRect& aFrameRect,
+                              uint32_t aDecodeFlags,
+                              SurfaceFormat aFormat,
+                              uint8_t aPaletteDepth,
+                              imgFrame* aPreviousFrame)
+{
+  // We assume that we're in the middle of decoding because we unlock the
+  // previous frame when we create a new frame, and only when decoding do we
+  // lock frames.
+  MOZ_ASSERT(mDecoder, "Only decoders may add frames!");
+
+  MOZ_ASSERT(aFrameNum <= GetNumFrames(), "Invalid frame index!");
+  if (aFrameNum > GetNumFrames()) {
+    return RawAccessFrameRef();
+  }
+
+  if (mSize.width <= 0 || mSize.height <= 0) {
+    NS_WARNING("Trying to add frame with zero or negative size");
+    return RawAccessFrameRef();
+  }
+
+  if (!SurfaceCache::CanHold(mSize.ToIntSize())) {
+    NS_WARNING("Trying to add frame that's too large for the SurfaceCache");
+    return RawAccessFrameRef();
+  }
+
+  nsRefPtr<imgFrame> frame = new imgFrame();
+  if (NS_FAILED(frame->InitForDecoder(mSize, aFrameRect, aFormat,
+                                      aPaletteDepth))) {
+    NS_WARNING("imgFrame::Init should succeed");
+    return RawAccessFrameRef();
+  }
+  frame->SetAsNonPremult(aDecodeFlags & FLAG_DECODE_NO_PREMULTIPLY_ALPHA);
+
+  RawAccessFrameRef ref = frame->RawAccessRef();
+  if (!ref) {
+    return RawAccessFrameRef();
+  }
+
+  
+  bool succeeded =
+    SurfaceCache::Insert(frame, ImageKey(this),
+                         RasterSurfaceKey(mSize.ToIntSize(),
+                                          aDecodeFlags,
+                                          aFrameNum),
+                         Lifetime::Persistent);
+  if (!succeeded) {
+    return RawAccessFrameRef();
+  }
+  
+  if (aFrameNum == 1) {
+    // We're becoming animated, so initialize animation stuff.
+    MOZ_ASSERT(!mAnim, "Already have animation state?");
+    mAnim = MakeUnique<FrameAnimator>(this, mSize.ToIntSize(), mAnimationMode);
+
+    // We don't support discarding animated images (See bug 414259).
+    // Lock the image and throw away the key.
+    //
+    // Note that this is inefficient, since we could get rid of the source data
+    // too. However, doing this is actually hard, because we're probably
+    // mid-decode, and thus we're decoding out of the source buffer. Since we're
+    // going to fix this anyway later, and since we didn't kill the source data
+    // in the old world either, locking is acceptable for the moment.
+    LockImage();
+    
+    MOZ_ASSERT(aPreviousFrame, "Must provide a previous frame when animated");
+    aPreviousFrame->SetRawAccessOnly();
+
+    // If we dispose of the first frame by clearing it, then the first frame's
+    // refresh area is all of itself.
+    // RESTORE_PREVIOUS is invalid (assumed to be DISPOSE_CLEAR).
+    DisposalMethod disposalMethod = aPreviousFrame->GetDisposalMethod();
+    if (disposalMethod == DisposalMethod::CLEAR ||
+        disposalMethod == DisposalMethod::CLEAR_ALL ||
+        disposalMethod == DisposalMethod::RESTORE_PREVIOUS) {
+      mAnim->SetFirstFrameRefreshArea(aPreviousFrame->GetRect());
+    }
+
+    if (mPendingAnimation && ShouldAnimate()) {
+      StartAnimation();
+    }
+  }
+
+  if (aFrameNum > 0) {
+    ref->SetRawAccessOnly();
+
+    // Some GIFs are huge but only have a small area that they animate. We only
+    // need to refresh that small area when frame 0 comes around again.
+    mAnim->UnionFirstFrameRefreshArea(frame->GetRect());
+  }
+ 
+  mFrameCount++;
+  return ref;
+}
+
+
 void
 RasterImage::OnAddedFrame(uint32_t aNewFrameCount,
                           const nsIntRect& aNewRefreshArea)
@@ -974,6 +1072,58 @@ RasterImage::SetSize(int32_t aWidth, int32_t aHeight, Orientation aOrientation)
   mHasSize = true;
 
   return NS_OK;
+}
+
+RawAccessFrameRef
+RasterImage::EnsureFrame(uint32_t aFrameNum,
+                         const nsIntRect& aFrameRect,
+                         uint32_t aDecodeFlags,
+                         SurfaceFormat aFormat,
+                         uint8_t aPaletteDepth,
+                         imgFrame* aPreviousFrame)
+{
+  if (mError) {
+    return RawAccessFrameRef();
+  }
+
+  MOZ_ASSERT(aFrameNum <= GetNumFrames(), "Invalid frame index!");
+  if (aFrameNum > GetNumFrames()) {
+    return RawAccessFrameRef();
+  }
+
+  // Adding a frame that doesn't already exist. This is the normal case.
+  if (aFrameNum == GetNumFrames()) {
+    return InternalAddFrame(aFrameNum, aFrameRect, aDecodeFlags, aFormat,
+                            aPaletteDepth, aPreviousFrame);
+  }
+
+  // We're replacing a frame. It must be the first frame; there's no reason to
+  // ever replace any other frame, since the first frame is the only one we
+  // speculatively allocate without knowing what the decoder really needs.
+  // XXX(seth): I'm not convinced there's any reason to support this at all. We
+  // should figure out how to avoid triggering this and rip it out.
+  MOZ_ASSERT(aFrameNum == 0, "Replacing a frame other than the first?");
+  MOZ_ASSERT(GetNumFrames() == 1, "Should have only one frame");
+  MOZ_ASSERT(aPreviousFrame, "Need the previous frame to replace");
+  MOZ_ASSERT(!mAnim, "Shouldn't be animated");
+  if (aFrameNum != 0 || !aPreviousFrame || GetNumFrames() != 1) {
+    return RawAccessFrameRef();
+  }
+
+  MOZ_ASSERT(!aPreviousFrame->GetRect().IsEqualEdges(aFrameRect) ||
+             aPreviousFrame->GetFormat() != aFormat ||
+             aPreviousFrame->GetPaletteDepth() != aPaletteDepth,
+             "Replacing first frame with the same kind of frame?");
+
+  // Remove the old frame from the SurfaceCache.
+  IntSize prevFrameSize = aPreviousFrame->GetImageSize();
+  SurfaceCache::RemoveSurface(ImageKey(this),
+                              RasterSurfaceKey(prevFrameSize, aDecodeFlags, 0));
+  mFrameCount = 0;
+
+  // Add the new frame as usual.
+  return InternalAddFrame(aFrameNum, aFrameRect, aDecodeFlags, aFormat,
+                          aPaletteDepth, nullptr);
 }
 
 void

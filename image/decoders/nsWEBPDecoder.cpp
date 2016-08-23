@@ -114,19 +114,25 @@ nsWEBPDecoder::WriteInternal(const char *aBuffer, uint32_t aCount)
     return;
   }
 
-  if (!HasSize())
-    PostSize(width, height);
+//  if (!HasSize())
+//    PostSize(width, height);
 
   if (IsSizeDecode())
     return;
 
-  uint32_t imagelength;
+  nsIntSize imagelength;
+//  imgFrame* aFrame = nullptr;
   // First incremental Image data chunk. Special handling required.
   if (mLastLine == 0 && lastLineRead > 0) {
+    nsIntRect WebPRect(0, 0, width, height);
+    PostSize(width, height);
     imgFrame* aFrame;
     nsresult res = mImage.EnsureFrame(0, 0, 0, width, height,
                                        gfxASurface::ImageFormatARGB32,
                                        (uint8_t**)&mImageData, &imagelength, &aFrame);
+//    RawAccessFrameRef res = Decoder::EnsureFrame(0, imagelength, WebPRect, 0,
+//                                        gfx::SurfaceFormat::B8G8R8A8,
+//                                        0, aFrame);
     if (NS_FAILED(res) || !mImageData) {
       PostDecoderError(NS_ERROR_FAILURE);
       return;
