@@ -936,7 +936,7 @@ RasterImage::InternalAddFrame(uint32_t aFrameNum,
     NS_WARNING("imgFrame::Init should succeed");
     return RawAccessFrameRef();
   }
-  frame->SetAsNonPremult(aDecodeFlags & FLAG_DECODE_NO_PREMULTIPLY_ALPHA);
+//  frame->SetAsNonPremult(aDecodeFlags & FLAG_DECODE_NO_PREMULTIPLY_ALPHA);
 
   RawAccessFrameRef ref = frame->RawAccessRef();
   if (!ref) {
@@ -944,16 +944,16 @@ RasterImage::InternalAddFrame(uint32_t aFrameNum,
   }
 
   
-  bool succeeded =
+  InsertOutcome succeeded =
     SurfaceCache::Insert(frame, ImageKey(this),
                          RasterSurfaceKey(mSize.ToIntSize(),
                                           aDecodeFlags,
                                           aFrameNum),
                          Lifetime::Persistent);
-  if (!succeeded) {
+  if (succeeded != InsertOutcome::SUCCESS) {
     return RawAccessFrameRef();
   }
-  
+/*  
   if (aFrameNum == 1) {
     // We're becoming animated, so initialize animation stuff.
     MOZ_ASSERT(!mAnim, "Already have animation state?");
@@ -994,7 +994,7 @@ RasterImage::InternalAddFrame(uint32_t aFrameNum,
     // need to refresh that small area when frame 0 comes around again.
     mAnim->UnionFirstFrameRefreshArea(frame->GetRect());
   }
- 
+*/ 
   mFrameCount++;
   return ref;
 }
