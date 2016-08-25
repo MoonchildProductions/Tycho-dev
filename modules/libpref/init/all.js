@@ -452,12 +452,6 @@ pref("media.mediasource.enabled", true);
 pref("media.mediasource.enabled", false);
 #endif
 
-#ifdef RELEASE_BUILD
-pref("media.mediasource.whitelist", true);
-#else
-pref("media.mediasource.whitelist", false);
-#endif // RELEASE_BUILD
-
 pref("media.mediasource.mp4.enabled", true);
 pref("media.mediasource.webm.enabled", false);
 
@@ -474,6 +468,8 @@ pref("media.encoder.omx.enabled", true);
 
 // Whether to autostart a media element with an |autoplay| attribute
 pref("media.autoplay.enabled", true);
+// Whether to autostart a media element with an autoplaying script event
+pref("media.autoplay.allowscripted", true);
 
 // The default number of decoded video frames that are enqueued in
 // MediaDecoderReader's mVideoQueue.
@@ -3830,6 +3826,10 @@ pref("image.multithreaded_decoding.limit", -1);
 // cache.
 pref("canvas.image.cache.limit", 0);
 
+// Allow track-fobics to deliberately poison canvas data for
+// toDataURL() and getImageData()
+pref("canvas.poisondata", false);
+
 // How many images to eagerly decode on a given page. 0 means "no limit".
 pref("image.onload.decode.limit", 0);
 
@@ -4079,7 +4079,7 @@ pref("dom.vibrator.max_vibrate_ms", 10000);
 pref("dom.vibrator.max_vibrate_list_len", 128);
 
 // Battery API
-pref("dom.battery.enabled", true);
+pref("dom.battery.enabled", false);
 
 // Image srcset
 pref("dom.image.srcset.enabled", true);
